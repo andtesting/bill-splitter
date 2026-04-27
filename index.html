@@ -195,6 +195,30 @@
         }
         .copy-btn.copied { background: var(--btn); color: var(--btn-text); }
 
+        .section-header {
+            cursor: pointer; user-select: none;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .section-header .chevron {
+            transition: transform 0.2s;
+            font-size: 14px; color: var(--hint);
+        }
+
+        .section-header .chevron.collapsed { transform: rotate(-90deg); }
+
+        .section-header .summary {
+            font-size: 11px; font-weight: 400;
+            color: var(--hint); text-transform: none;
+            letter-spacing: 0; margin-left: 8px;
+        }
+
+        .collapsible { overflow: hidden; transition: max-height 0.2s; }
+        .collapsible.collapsed { max-height: 0 !important; }
+
+        .btn-row { display: flex; gap: 8px; }
+        .btn-row .copy-btn { flex: 1; }
+
         .reset-row { text-align: center; margin-top: 32px; }
         .reset-btn {
             background: none;
@@ -208,40 +232,50 @@
     <h1>Bill Splitter</h1>
 
     <section>
-        <div class="section-header">Friends</div>
-        <div id="friend-tags" class="tag-list"></div>
-        <div class="input-row">
-            <input type="text" id="friend-input" placeholder="Name" autocomplete="off"
-                   onkeydown="if(event.key==='Enter'){addFriend()}">
-            <button onclick="addFriend()">Add</button>
+        <div class="section-header" onclick="toggleSection('friends')">
+            <span>Friends <span id="friends-summary" class="summary"></span></span>
+            <span id="friends-chevron" class="chevron">&#9660;</span>
+        </div>
+        <div id="friends-body" class="collapsible" style="max-height:500px">
+            <div id="friend-tags" class="tag-list"></div>
+            <div class="input-row">
+                <input type="text" id="friend-input" placeholder="Name" autocomplete="off"
+                       onkeydown="if(event.key==='Enter'){addFriend()}">
+                <button onclick="addFriend()">Add</button>
+            </div>
         </div>
     </section>
 
     <section>
-        <div class="section-header">Dishes</div>
-        <div id="dish-tags" class="tag-list"></div>
-        <div class="dish-inputs">
-            <input type="text" id="dish-name" placeholder="Dish name" autocomplete="off"
-                   onkeydown="if(event.key==='Enter'){document.getElementById('dish-price').focus()}">
-            <input type="number" id="dish-price" placeholder="$0.00" step="0.01" min="0"
-                   onkeydown="if(event.key==='Enter'){addDish()}">
-            <button onclick="addDish()">Add</button>
+        <div class="section-header" onclick="toggleSection('dishes')">
+            <span>Dishes <span id="dishes-summary" class="summary"></span></span>
+            <span id="dishes-chevron" class="chevron">&#9660;</span>
         </div>
-        <div class="options-row">
-            <div class="option-group">
-                <label class="toggle">
-                    <input type="checkbox" id="dish-shared" onchange="toggleSharedOptions()">
-                    <div class="toggle-track"></div>
-                    <div class="toggle-thumb"></div>
-                </label>
-                <span class="toggle-label">Shared item</span>
+        <div id="dishes-body" class="collapsible" style="max-height:1000px">
+            <div id="dish-tags" class="tag-list"></div>
+            <div class="dish-inputs">
+                <input type="text" id="dish-name" placeholder="Dish name" autocomplete="off"
+                       onkeydown="if(event.key==='Enter'){document.getElementById('dish-price').focus()}">
+                <input type="number" id="dish-price" placeholder="$0.00" step="0.01" min="0"
+                       onkeydown="if(event.key==='Enter'){addDish()}">
+                <button onclick="addDish()">Add</button>
             </div>
-        </div>
-        <div class="options-row split-mode" id="split-mode-row">
-            <input type="radio" name="split-mode" id="split-equal" value="equal" checked>
-            <label for="split-equal">Split equally</label>
-            <input type="radio" name="split-mode" id="split-proportional" value="proportional">
-            <label for="split-proportional">Proportional to food</label>
+            <div class="options-row">
+                <div class="option-group">
+                    <label class="toggle">
+                        <input type="checkbox" id="dish-shared" onchange="toggleSharedOptions()">
+                        <div class="toggle-track"></div>
+                        <div class="toggle-thumb"></div>
+                    </label>
+                    <span class="toggle-label">Shared item</span>
+                </div>
+            </div>
+            <div class="options-row split-mode" id="split-mode-row">
+                <input type="radio" name="split-mode" id="split-equal" value="equal" checked>
+                <label for="split-equal">Split equally</label>
+                <input type="radio" name="split-mode" id="split-proportional" value="proportional">
+                <label for="split-proportional">Proportional to food</label>
+            </div>
         </div>
     </section>
 
@@ -257,7 +291,10 @@
         <div class="results-card">
             <div id="results-list"></div>
             <div id="results-warning"></div>
-            <button class="copy-btn" id="copy-btn" onclick="copySummary()">Copy Summary</button>
+            <div class="btn-row">
+                <button class="copy-btn" id="copy-btn" onclick="copySummary()">Copy Summary</button>
+                <button class="copy-btn" id="copy-detail-btn" onclick="copyDetail()">Copy Detail</button>
+            </div>
         </div>
     </section>
 
@@ -276,6 +313,21 @@
 
         let nextId = 1;
         const state = { friends: [], dishes: [], checks: {} };
+
+        const collapsed = { friends: false, dishes: false };
+
+        function toggleSection(name) {
+            collapsed[name] = !collapsed[name];
+            document.getElementById(name + '-body').classList.toggle('collapsed', collapsed[name]);
+            document.getElementById(name + '-chevron').classList.toggle('collapsed', collapsed[name]);
+        }
+
+        function autoCollapseSections() {
+            if (state.friends.length > 0 && state.dishes.length > 0) {
+                if (!collapsed.friends) toggleSection('friends');
+                if (!collapsed.dishes) toggleSection('dishes');
+            }
+        }
 
         function toggleSharedOptions() {
             const on = document.getElementById('dish-shared').checked;
@@ -417,6 +469,19 @@
             renderTags();
             renderGrid();
             renderResults();
+            updateSummaries();
+        }
+
+        function updateSummaries() {
+            const fs = document.getElementById('friends-summary');
+            const ds = document.getElementById('dishes-summary');
+            if (state.friends.length > 0) {
+                fs.textContent = '(' + state.friends.map(f => f.name).join(', ') + ')';
+            } else { fs.textContent = ''; }
+            if (state.dishes.length > 0) {
+                const total = state.dishes.reduce((s, d) => s + d.price, 0);
+                ds.textContent = '(' + state.dishes.length + ' items, $' + total.toFixed(2) + ')';
+            } else { ds.textContent = ''; }
         }
 
         function renderTags() {
@@ -493,14 +558,63 @@
                 : '';
         }
 
-        function copySummary() {
-            const text = buildSummary();
+        function copyToClipboard(text, btnId, label) {
             navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById('copy-btn');
+                const btn = document.getElementById(btnId);
                 btn.textContent = 'Copied!';
                 btn.classList.add('copied');
-                setTimeout(() => { btn.textContent = 'Copy Summary'; btn.classList.remove('copied'); }, 1500);
+                setTimeout(() => { btn.textContent = label; btn.classList.remove('copied'); }, 1500);
             });
+        }
+
+        function copySummary() {
+            copyToClipboard(buildSummary(), 'copy-btn', 'Copy Summary');
+        }
+
+        function copyDetail() {
+            const { rounded, billTotal } = roundedTotals();
+            const foodDishes = state.dishes.filter(d => !d.shared);
+            const sharedDishes = state.dishes.filter(d => d.shared);
+
+            const foodSubtotals = {};
+            state.friends.forEach(f => { foodSubtotals[f.id] = 0; });
+            foodDishes.forEach(dish => {
+                const who = state.friends.filter(f => state.checks[dish.id + '-' + f.id]);
+                if (who.length > 0) {
+                    const share = dish.price / who.length;
+                    who.forEach(f => { foodSubtotals[f.id] += share; });
+                }
+            });
+            const totalFood = state.friends.reduce((s, f) => s + foodSubtotals[f.id], 0);
+
+            let text = 'Bill split (detail):\n\n';
+            state.friends.forEach(f => {
+                text += f.name + ': $' + rounded[f.id].toFixed(2) + '\n';
+                foodDishes.forEach(dish => {
+                    if (state.checks[dish.id + '-' + f.id]) {
+                        const who = state.friends.filter(fr => state.checks[dish.id + '-' + fr.id]);
+                        const share = dish.price / who.length;
+                        if (who.length > 1) {
+                            text += '  ' + dish.name + ' $' + dish.price.toFixed(2) + '/' + who.length + ' = $' + share.toFixed(2) + '\n';
+                        } else {
+                            text += '  ' + dish.name + ' $' + dish.price.toFixed(2) + '\n';
+                        }
+                    }
+                });
+                sharedDishes.forEach(dish => {
+                    let share;
+                    if (dish.splitMode === 'proportional' && totalFood > 0) {
+                        share = dish.price * (foodSubtotals[f.id] / totalFood);
+                    } else {
+                        share = dish.price / state.friends.length;
+                    }
+                    text += '  ' + dish.name + ' (' + dish.splitMode + '): $' + share.toFixed(2) + '\n';
+                });
+                text += '\n';
+            });
+            text += 'Total: $' + billTotal.toFixed(2);
+
+            copyToClipboard(text, 'copy-detail-btn', 'Copy Detail');
         }
 
         function resetAll() {
@@ -582,8 +696,9 @@
             }
         }
 
-        if (!loadFromHash()) loadFromQuery();
+        const prefilled = loadFromHash() || (loadFromQuery(), state.friends.length > 0);
         render();
+        if (prefilled) autoCollapseSections();
     </script>
 </body>
 </html>
