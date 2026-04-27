@@ -157,6 +157,22 @@
         .dish-cell-price { color: var(--hint); font-size: 13px; margin-left: 6px; }
         .dish-cell-shared { display: block; font-size: 11px; color: var(--link); margin-top: 2px; }
 
+        .compact-toggle {
+            padding: 4px 10px; font-size: 11px;
+            background: var(--secondary-bg); color: var(--hint);
+            border: 1px solid var(--section-separator);
+            border-radius: 6px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .compact-toggle.active { background: var(--btn); color: var(--btn-text); border-color: var(--btn); }
+
+        .grid-compact td:first-child, .grid-compact th:first-child {
+            max-width: 32px; padding-right: 6px;
+        }
+        .grid-compact .dish-cell-name { font-size: 13px; }
+        .grid-compact .dish-cell-price, .grid-compact .dish-cell-shared { display: none; }
+
         td input[type="checkbox"] {
             width: 28px; height: 28px;
             accent-color: var(--btn); cursor: pointer;
@@ -280,7 +296,10 @@
     </section>
 
     <section id="grid-section" style="display:none">
-        <div class="section-header">Who had what?</div>
+        <div class="section-header" style="cursor:default">
+            <span>Who had what?</span>
+            <button class="compact-toggle" id="compact-toggle" onclick="toggleCompact()">Compact</button>
+        </div>
         <div class="grid-wrap">
             <table id="grid"></table>
         </div>
@@ -327,6 +346,15 @@
                 if (!collapsed.friends) toggleSection('friends');
                 if (!collapsed.dishes) toggleSection('dishes');
             }
+        }
+
+        let compactMode = false;
+
+        function toggleCompact() {
+            compactMode = !compactMode;
+            document.getElementById('compact-toggle').classList.toggle('active', compactMode);
+            document.getElementById('compact-toggle').textContent = compactMode ? 'Expand' : 'Compact';
+            renderGrid();
         }
 
         function toggleSharedOptions() {
@@ -506,17 +534,24 @@
                 return;
             }
             section.style.display = '';
+            const grid = document.getElementById('grid');
+            grid.className = compactMode ? 'grid-compact' : '';
 
             let html = '<thead><tr><th></th>';
             state.friends.forEach(f => { html += '<th>' + esc(f.name) + '</th>'; });
             html += '</tr></thead><tbody>';
 
-            state.dishes.forEach(dish => {
-                html += '<tr><td><span class="dish-cell-name">' + esc(dish.name) + '</span>' +
-                    '<span class="dish-cell-price">$' + dish.price.toFixed(2) + '</span>';
-                if (dish.shared) {
-                    const label = dish.splitMode === 'proportional' ? 'proportional' : 'split equally';
-                    html += '<span class="dish-cell-shared">' + label + '</span>';
+            state.dishes.forEach((dish, idx) => {
+                html += '<tr><td>';
+                if (compactMode) {
+                    html += '<span class="dish-cell-name">' + (idx + 1) + '</span>';
+                } else {
+                    html += '<span class="dish-cell-name">' + esc(dish.name) + '</span>' +
+                        '<span class="dish-cell-price">$' + dish.price.toFixed(2) + '</span>';
+                    if (dish.shared) {
+                        const label = dish.splitMode === 'proportional' ? 'proportional' : 'split equally';
+                        html += '<span class="dish-cell-shared">' + label + '</span>';
+                    }
                 }
                 html += '</td>';
 
@@ -696,9 +731,8 @@
             }
         }
 
-        const prefilled = loadFromHash() || (loadFromQuery(), state.friends.length > 0);
+        if (!loadFromHash()) loadFromQuery();
         render();
-        if (prefilled) autoCollapseSections();
     </script>
 </body>
 </html>
