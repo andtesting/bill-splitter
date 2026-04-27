@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Bill Splitter</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #111;
+            color: #f0f0f0;
+            min-height: 100vh;
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        h1 { font-size: 22px; font-weight: 700; margin-bottom: 24px; text-align: center; }
+
+        section { margin-bottom: 28px; }
+
+        .section-header {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type="text"], input[type="number"] {
+            flex: 1;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #f0f0f0;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        input:focus { border-color: #4ecdc4; }
+        input[type="number"] { max-width: 110px; }
+        input::placeholder { color: #555; }
+
+        button {
+            padding: 12px 20px;
+            background: #4ecdc4;
+            color: #111;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: transform 0.1s;
+        }
+
+        button:active { transform: scale(0.96); }
+
+        .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 0; }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .tag .remove {
+            cursor: pointer;
+            color: #555;
+            font-size: 18px;
+            line-height: 1;
+            padding: 2px;
+        }
+
+        .tag .remove:hover { color: #ff6b6b; }
+        .tag .shared-badge { color: #4ecdc4; font-size: 11px; font-weight: 600; }
+
+        .dish-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .dish-inputs input[type="text"] { flex: 2; min-width: 100px; }
+        .dish-inputs input[type="number"] { flex: 1; min-width: 80px; }
+
+        .shared-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .toggle input { display: none; }
+
+        .toggle-track {
+            position: absolute;
+            inset: 0;
+            background: #333;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+
+        .toggle input:checked + .toggle-track { background: #4ecdc4; }
+
+        .toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            pointer-events: none;
+        }
+
+        .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
+        .toggle-label { font-size: 13px; color: #888; }
+
+        /* Grid */
+        .grid-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -16px;
+            padding: 0 16px;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        th, td {
+            padding: 8px 10px;
+            text-align: center;
+            border-bottom: 1px solid #1e1e1e;
+            white-space: nowrap;
+        }
+
+        th {
+            font-size: 12px;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td:first-child, th:first-child {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background: #111;
+            z-index: 1;
+            padding-right: 16px;
+        }
+
+        .dish-cell-name { font-weight: 500; font-size: 14px; }
+        .dish-cell-price { color: #666; font-size: 13px; margin-left: 6px; }
+        .dish-cell-shared { display: block; font-size: 11px; color: #4ecdc4; margin-top: 2px; }
+
+        td input[type="checkbox"] {
+            width: 28px;
+            height: 28px;
+            accent-color: #4ecdc4;
+            cursor: pointer;
+        }
+
+        /* Results */
+        .results-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #222;
+            font-size: 16px;
+        }
+
+        .result-row:last-child { border-bottom: none; }
+
+        .result-row.total {
+            font-weight: 700;
+            color: #4ecdc4;
+            border-top: 2px solid #333;
+            margin-top: 4px;
+            padding-top: 14px;
+            border-bottom: none;
+        }
+
+        .result-name { font-weight: 500; }
+        .result-amount { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; }
+
+        .warning {
+            color: #ff6b6b;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .copy-btn {
+            width: 100%;
+            margin-top: 14px;
+            background: #333;
+            color: #f0f0f0;
+            font-weight: 600;
+        }
+
+        .copy-btn.copied { background: #4ecdc4; color: #111; }
+
+        .empty-hint {
+            color: #444;
+            font-size: 14px;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .reset-row { text-align: center; margin-top: 32px; }
+        .reset-btn {
+            background: none;
+            border: 1px solid #333;
+            color: #666;
+            font-size: 13px;
+            padding: 8px 20px;
+        }
+        .reset-btn:hover { border-color: #ff6b6b; color: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <h1>Bill Splitter</h1>
+
+    <section>
+        <div class="section-header">Friends</div>
+        <div id="friend-tags" class="tag-list"></div>
+        <div class="input-row">
+            <input type="text" id="friend-input" placeholder="Name" autocomplete="off"
+                   onkeydown="if(event.key==='Enter'){addFriend()}">
+            <button onclick="addFriend()">Add</button>
+        </div>
+    </section>
+
+    <section>
+        <div class="section-header">Dishes</div>
+        <div id="dish-tags" class="tag-list"></div>
+        <div class="dish-inputs">
+            <input type="text" id="dish-name" placeholder="Dish name" autocomplete="off"
+                   onkeydown="if(event.key==='Enter'){document.getElementById('dish-price').focus()}">
+            <input type="number" id="dish-price" placeholder="$0.00" step="0.01" min="0"
+                   onkeydown="if(event.key==='Enter'){addDish()}">
+            <button onclick="addDish()">Add</button>
+        </div>
+        <div class="shared-row">
+            <label class="toggle">
+                <input type="checkbox" id="dish-shared">
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+            </label>
+            <span class="toggle-label">Split equally (surcharges, shared plates)</span>
+        </div>
+    </section>
+
+    <section id="grid-section" style="display:none">
+        <div class="section-header">Who had what?</div>
+        <div class="grid-wrap">
+            <table id="grid"></table>
+        </div>
+    </section>
+
+    <section id="results-section" style="display:none">
+        <div class="section-header">The Split</div>
+        <div class="results-card">
+            <div id="results-list"></div>
+            <div id="results-warning"></div>
+            <button class="copy-btn" id="copy-btn" onclick="copySummary()">Copy Summary</button>
+        </div>
+    </section>
+
+    <div class="reset-row">
+        <button class="reset-btn" onclick="resetAll()">Reset All</button>
+    </div>
+
+    <script>
+        let nextId = 1;
+        const state = { friends: [], dishes: [], checks: {} };
+
+        function addFriend() {
+            const el = document.getElementById('friend-input');
+            const name = el.value.trim();
+            if (!name) return;
+            state.friends.push({ name, id: nextId++ });
+            el.value = '';
+            el.focus();
+            render();
+        }
+
+        function removeFriend(id) {
+            state.friends = state.friends.filter(f => f.id !== id);
+            for (const k of Object.keys(state.checks)) {
+                if (k.endsWith('-' + id)) delete state.checks[k];
+            }
+            render();
+        }
+
+        function addDish() {
+            const nameEl = document.getElementById('dish-name');
+            const priceEl = document.getElementById('dish-price');
+            const sharedEl = document.getElementById('dish-shared');
+            const name = nameEl.value.trim();
+            const price = parseFloat(priceEl.value);
+            if (!name || isNaN(price) || price <= 0) return;
+
+            const dish = { name, price, shared: sharedEl.checked, id: nextId++ };
+            state.dishes.push(dish);
+
+            if (dish.shared) {
+                state.friends.forEach(f => { state.checks[dish.id + '-' + f.id] = true; });
+            }
+
+            nameEl.value = '';
+            priceEl.value = '';
+            sharedEl.checked = false;
+            nameEl.focus();
+            render();
+        }
+
+        function removeDish(id) {
+            state.dishes = state.dishes.filter(d => d.id !== id);
+            for (const k of Object.keys(state.checks)) {
+                if (k.startsWith(id + '-')) delete state.checks[k];
+            }
+            render();
+        }
+
+        function toggleCheck(dishId, friendId) {
+            const key = dishId + '-' + friendId;
+            state.checks[key] = !state.checks[key];
+            render();
+        }
+
+        function calculate() {
+            const totals = {};
+            state.friends.forEach(f => { totals[f.id] = 0; });
+            const unassigned = [];
+
+            state.dishes.forEach(dish => {
+                if (dish.shared) {
+                    if (state.friends.length > 0) {
+                        const share = dish.price / state.friends.length;
+                        state.friends.forEach(f => { totals[f.id] += share; });
+                    }
+                } else {
+                    const who = state.friends.filter(f => state.checks[dish.id + '-' + f.id]);
+                    if (who.length > 0) {
+                        const share = dish.price / who.length;
+                        who.forEach(f => { totals[f.id] += share; });
+                    } else {
+                        unassigned.push(dish.name);
+                    }
+                }
+            });
+
+            return { totals, unassigned };
+        }
+
+        function roundedTotals() {
+            const { totals, unassigned } = calculate();
+            const billTotal = state.dishes.reduce((s, d) => s + d.price, 0);
+            const rounded = {};
+            let sum = 0;
+
+            state.friends.forEach(f => {
+                rounded[f.id] = Math.round(totals[f.id] * 100) / 100;
+                sum += rounded[f.id];
+            });
+
+            const diff = Math.round((billTotal - sum) * 100);
+            if (diff !== 0 && state.friends.length > 0) {
+                const last = [...state.friends].reverse().find(f => rounded[f.id] > 0) || state.friends[state.friends.length - 1];
+                rounded[last.id] = Math.round((rounded[last.id] + diff / 100) * 100) / 100;
+            }
+
+            return { rounded, billTotal, unassigned };
+        }
+
+        function render() {
+            renderTags();
+            renderGrid();
+            renderResults();
+        }
+
+        function renderTags() {
+            document.getElementById('friend-tags').innerHTML = state.friends.map(f =>
+                '<span class="tag">' + esc(f.name) +
+                '<span class="remove" onclick="removeFriend(' + f.id + ')">&times;</span></span>'
+            ).join('');
+
+            document.getElementById('dish-tags').innerHTML = state.dishes.map(d =>
+                '<span class="tag">' + esc(d.name) + ' $' + d.price.toFixed(2) +
+                (d.shared ? ' <span class="shared-badge">SHARED</span>' : '') +
+                '<span class="remove" onclick="removeDish(' + d.id + ')">&times;</span></span>'
+            ).join('');
+        }
+
+        function renderGrid() {
+            const section = document.getElementById('grid-section');
+            if (state.dishes.length === 0 || state.friends.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            section.style.display = '';
+
+            let html = '<thead><tr><th></th>';
+            state.friends.forEach(f => { html += '<th>' + esc(f.name) + '</th>'; });
+            html += '</tr></thead><tbody>';
+
+            state.dishes.forEach(dish => {
+                html += '<tr><td><span class="dish-cell-name">' + esc(dish.name) + '</span>' +
+                    '<span class="dish-cell-price">$' + dish.price.toFixed(2) + '</span>';
+                if (dish.shared) html += '<span class="dish-cell-shared">split equally</span>';
+                html += '</td>';
+
+                state.friends.forEach(f => {
+                    const key = dish.id + '-' + f.id;
+                    const checked = state.checks[key] ? ' checked' : '';
+                    const disabled = dish.shared ? ' disabled' : '';
+                    html += '<td><input type="checkbox"' + checked + disabled +
+                        ' onchange="toggleCheck(' + dish.id + ',' + f.id + ')"></td>';
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody>';
+            document.getElementById('grid').innerHTML = html;
+        }
+
+        function renderResults() {
+            const section = document.getElementById('results-section');
+            if (state.dishes.length === 0 || state.friends.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            section.style.display = '';
+
+            const { rounded, billTotal, unassigned } = roundedTotals();
+
+            let html = '';
+            state.friends.forEach(f => {
+                html += '<div class="result-row"><span class="result-name">' + esc(f.name) +
+                    '</span><span class="result-amount">$' + rounded[f.id].toFixed(2) + '</span></div>';
+            });
+            html += '<div class="result-row total"><span class="result-name">Total</span>' +
+                '<span class="result-amount">$' + billTotal.toFixed(2) + '</span></div>';
+
+            document.getElementById('results-list').innerHTML = html;
+            document.getElementById('results-warning').innerHTML = unassigned.length > 0
+                ? '<div class="warning">Not assigned: ' + unassigned.map(esc).join(', ') + '</div>'
+                : '';
+        }
+
+        function copySummary() {
+            const { rounded, billTotal } = roundedTotals();
+            let text = 'Bill split:\n';
+            state.friends.forEach(f => {
+                text += f.name + ': $' + rounded[f.id].toFixed(2) + '\n';
+            });
+            text += 'Total: $' + billTotal.toFixed(2);
+
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copy-btn');
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = 'Copy Summary'; btn.classList.remove('copied'); }, 1500);
+            });
+        }
+
+        function resetAll() {
+            state.friends = [];
+            state.dishes = [];
+            state.checks = {};
+            render();
+        }
+
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        render();
+    </script>
+</body>
+</html>
