@@ -4,18 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Bill Splitter</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        :root {
+            --bg: var(--tg-theme-bg-color, #111);
+            --text: var(--tg-theme-text-color, #f0f0f0);
+            --hint: var(--tg-theme-hint-color, #888);
+            --link: var(--tg-theme-link-color, #4ecdc4);
+            --btn: var(--tg-theme-button-color, #4ecdc4);
+            --btn-text: var(--tg-theme-button-text-color, #111);
+            --secondary-bg: var(--tg-theme-secondary-bg-color, #1a1a1a);
+            --section-bg: var(--tg-theme-section-bg-color, var(--secondary-bg));
+            --section-separator: var(--tg-theme-section-separator-color, #222);
+            --subtitle: var(--tg-theme-subtitle-text-color, #666);
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: #111;
-            color: #f0f0f0;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
             padding: 16px;
             max-width: 600px;
             margin: 0 auto;
             -webkit-tap-highlight-color: transparent;
+            padding-bottom: 100px;
         }
 
         h1 { font-size: 22px; font-weight: 700; margin-bottom: 24px; text-align: center; }
@@ -27,35 +42,32 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #666;
+            color: var(--subtitle);
             margin-bottom: 12px;
         }
 
-        .input-row {
-            display: flex;
-            gap: 8px;
-        }
+        .input-row { display: flex; gap: 8px; }
 
         input[type="text"], input[type="number"] {
             flex: 1;
             padding: 12px;
-            background: #1a1a1a;
-            border: 1px solid #333;
+            background: var(--secondary-bg);
+            border: 1px solid var(--section-separator);
             border-radius: 8px;
-            color: #f0f0f0;
+            color: var(--text);
             font-size: 16px;
             outline: none;
             transition: border-color 0.15s;
         }
 
-        input:focus { border-color: #4ecdc4; }
+        input:focus { border-color: var(--btn); }
         input[type="number"] { max-width: 110px; }
-        input::placeholder { color: #555; }
+        input::placeholder { color: var(--hint); }
 
         button {
             padding: 12px 20px;
-            background: #4ecdc4;
-            color: #111;
+            background: var(--btn);
+            color: var(--btn-text);
             border: none;
             border-radius: 8px;
             font-size: 16px;
@@ -74,76 +86,46 @@
             align-items: center;
             gap: 6px;
             padding: 6px 12px;
-            background: #1a1a1a;
-            border: 1px solid #333;
+            background: var(--secondary-bg);
+            border: 1px solid var(--section-separator);
             border-radius: 20px;
             font-size: 14px;
         }
 
         .tag .remove {
             cursor: pointer;
-            color: #555;
+            color: var(--hint);
             font-size: 18px;
             line-height: 1;
             padding: 2px;
         }
 
         .tag .remove:hover { color: #ff6b6b; }
-        .tag .shared-badge { color: #4ecdc4; font-size: 11px; font-weight: 600; }
+        .tag .shared-badge { color: var(--link); font-size: 11px; font-weight: 600; }
 
-        .dish-inputs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-        }
-
+        .dish-inputs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
         .dish-inputs input[type="text"] { flex: 2; min-width: 100px; }
         .dish-inputs input[type="number"] { flex: 1; min-width: 80px; }
 
-        .shared-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
+        .shared-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
 
-        .toggle {
-            position: relative;
-            width: 44px;
-            height: 24px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-
+        .toggle { position: relative; width: 44px; height: 24px; cursor: pointer; flex-shrink: 0; }
         .toggle input { display: none; }
-
         .toggle-track {
-            position: absolute;
-            inset: 0;
-            background: #333;
-            border-radius: 12px;
-            transition: background 0.2s;
+            position: absolute; inset: 0;
+            background: var(--section-separator);
+            border-radius: 12px; transition: background 0.2s;
         }
-
-        .toggle input:checked + .toggle-track { background: #4ecdc4; }
-
+        .toggle input:checked + .toggle-track { background: var(--btn); }
         .toggle-thumb {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            background: #fff;
-            border-radius: 50%;
-            transition: transform 0.2s;
-            pointer-events: none;
+            position: absolute; top: 2px; left: 2px;
+            width: 20px; height: 20px;
+            background: #fff; border-radius: 50%;
+            transition: transform 0.2s; pointer-events: none;
         }
-
         .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
-        .toggle-label { font-size: 13px; color: #888; }
+        .toggle-label { font-size: 13px; color: var(--hint); }
 
-        /* Grid */
         .grid-wrap {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -156,42 +138,36 @@
         th, td {
             padding: 8px 10px;
             text-align: center;
-            border-bottom: 1px solid #1e1e1e;
+            border-bottom: 1px solid var(--section-separator);
             white-space: nowrap;
         }
 
         th {
-            font-size: 12px;
-            font-weight: 700;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 12px; font-weight: 700;
+            color: var(--hint);
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
 
         td:first-child, th:first-child {
             text-align: left;
-            position: sticky;
-            left: 0;
-            background: #111;
-            z-index: 1;
-            padding-right: 16px;
+            position: sticky; left: 0;
+            background: var(--bg);
+            z-index: 1; padding-right: 16px;
         }
 
         .dish-cell-name { font-weight: 500; font-size: 14px; }
-        .dish-cell-price { color: #666; font-size: 13px; margin-left: 6px; }
-        .dish-cell-shared { display: block; font-size: 11px; color: #4ecdc4; margin-top: 2px; }
+        .dish-cell-price { color: var(--hint); font-size: 13px; margin-left: 6px; }
+        .dish-cell-shared { display: block; font-size: 11px; color: var(--link); margin-top: 2px; }
 
         td input[type="checkbox"] {
-            width: 28px;
-            height: 28px;
-            accent-color: #4ecdc4;
+            width: 28px; height: 28px;
+            accent-color: var(--btn);
             cursor: pointer;
         }
 
-        /* Results */
         .results-card {
-            background: #1a1a1a;
-            border: 1px solid #333;
+            background: var(--section-bg);
+            border: 1px solid var(--section-separator);
             border-radius: 12px;
             padding: 16px;
         }
@@ -200,54 +176,36 @@
             display: flex;
             justify-content: space-between;
             padding: 10px 0;
-            border-bottom: 1px solid #222;
+            border-bottom: 1px solid var(--section-separator);
             font-size: 16px;
         }
 
         .result-row:last-child { border-bottom: none; }
 
         .result-row.total {
-            font-weight: 700;
-            color: #4ecdc4;
-            border-top: 2px solid #333;
-            margin-top: 4px;
-            padding-top: 14px;
-            border-bottom: none;
+            font-weight: 700; color: var(--link);
+            border-top: 2px solid var(--section-separator);
+            margin-top: 4px; padding-top: 14px; border-bottom: none;
         }
 
         .result-name { font-weight: 500; }
         .result-amount { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; }
 
-        .warning {
-            color: #ff6b6b;
-            font-size: 13px;
-            margin-top: 10px;
-        }
+        .warning { color: #ff6b6b; font-size: 13px; margin-top: 10px; }
 
         .copy-btn {
-            width: 100%;
-            margin-top: 14px;
-            background: #333;
-            color: #f0f0f0;
-            font-weight: 600;
+            width: 100%; margin-top: 14px;
+            background: var(--secondary-bg);
+            color: var(--text); font-weight: 600;
         }
-
-        .copy-btn.copied { background: #4ecdc4; color: #111; }
-
-        .empty-hint {
-            color: #444;
-            font-size: 14px;
-            text-align: center;
-            padding: 20px 0;
-        }
+        .copy-btn.copied { background: var(--btn); color: var(--btn-text); }
 
         .reset-row { text-align: center; margin-top: 32px; }
         .reset-btn {
             background: none;
-            border: 1px solid #333;
-            color: #666;
-            font-size: 13px;
-            padding: 8px 20px;
+            border: 1px solid var(--section-separator);
+            color: var(--hint);
+            font-size: 13px; padding: 8px 20px;
         }
         .reset-btn:hover { border-color: #ff6b6b; color: #ff6b6b; }
     </style>
@@ -306,6 +264,14 @@
     </div>
 
     <script>
+        const tg = window.Telegram && window.Telegram.WebApp;
+        const isTelegram = tg && tg.initData;
+
+        if (isTelegram) {
+            tg.expand();
+            tg.ready();
+        }
+
         let nextId = 1;
         const state = { friends: [], dishes: [], checks: {} };
 
@@ -408,10 +374,36 @@
             return { rounded, billTotal, unassigned };
         }
 
+        function buildSummary() {
+            const { rounded, billTotal } = roundedTotals();
+            let text = 'Bill split:\n';
+            state.friends.forEach(f => {
+                text += f.name + ': $' + rounded[f.id].toFixed(2) + '\n';
+            });
+            text += 'Total: $' + billTotal.toFixed(2);
+            return text;
+        }
+
+        function hasResults() {
+            return state.dishes.length > 0 && state.friends.length > 0 &&
+                state.dishes.some(d => d.shared || state.friends.some(f => state.checks[d.id + '-' + f.id]));
+        }
+
         function render() {
             renderTags();
             renderGrid();
             renderResults();
+            updateMainButton();
+        }
+
+        function updateMainButton() {
+            if (!isTelegram) return;
+            if (hasResults()) {
+                tg.MainButton.setText('Send Split to Chat');
+                tg.MainButton.show();
+            } else {
+                tg.MainButton.hide();
+            }
         }
 
         function renderTags() {
@@ -484,13 +476,7 @@
         }
 
         function copySummary() {
-            const { rounded, billTotal } = roundedTotals();
-            let text = 'Bill split:\n';
-            state.friends.forEach(f => {
-                text += f.name + ': $' + rounded[f.id].toFixed(2) + '\n';
-            });
-            text += 'Total: $' + billTotal.toFixed(2);
-
+            const text = buildSummary();
             navigator.clipboard.writeText(text).then(() => {
                 const btn = document.getElementById('copy-btn');
                 btn.textContent = 'Copied!';
@@ -543,6 +529,13 @@
                     }
                 });
             }
+        }
+
+        if (isTelegram) {
+            tg.MainButton.onClick(() => {
+                const text = buildSummary();
+                tg.sendData(text);
+            });
         }
 
         loadFromURL();
