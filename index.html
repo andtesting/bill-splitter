@@ -512,6 +512,40 @@
             return d.innerHTML;
         }
 
+        function loadFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const f = params.get('f');
+            const d = params.get('d');
+
+            if (f) {
+                f.split(',').forEach(name => {
+                    name = name.trim();
+                    if (name) state.friends.push({ name, id: nextId++ });
+                });
+            }
+
+            if (d) {
+                d.split('|').forEach(item => {
+                    const parts = item.split(':');
+                    if (parts.length >= 2) {
+                        const name = parts[0].trim();
+                        const price = parseFloat(parts[1]);
+                        const shared = parts[2] === 's';
+                        if (name && !isNaN(price) && price > 0) {
+                            const dish = { name, price, shared, id: nextId++ };
+                            state.dishes.push(dish);
+                            if (shared) {
+                                state.friends.forEach(fr => {
+                                    state.checks[dish.id + '-' + fr.id] = true;
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        loadFromURL();
         render();
     </script>
 </body>
