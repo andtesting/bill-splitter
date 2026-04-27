@@ -534,8 +534,9 @@
 
         function loadFromHash() {
             const params = new URLSearchParams(window.location.search);
-            const b64 = params.get('data') || window.location.hash.slice(1);
+            let b64 = params.get('data') || window.location.hash.slice(1);
             if (!b64) return false;
+            while (b64.length % 4) b64 += '=';
             try {
                 const data = JSON.parse(atob(b64));
                 if (data.f) {
