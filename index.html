@@ -533,10 +533,11 @@
         }
 
         function loadFromHash() {
-            const hash = window.location.hash.slice(1);
-            if (!hash) return false;
+            const params = new URLSearchParams(window.location.search);
+            const b64 = params.get('data') || window.location.hash.slice(1);
+            if (!b64) return false;
             try {
-                const data = JSON.parse(atob(hash));
+                const data = JSON.parse(atob(b64));
                 if (data.f) {
                     data.f.forEach(name => {
                         if (name) state.friends.push({ name, id: nextId++ });
