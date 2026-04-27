@@ -599,7 +599,16 @@
 
         if (isTelegram) {
             tg.MainButton.onClick(() => {
-                tg.sendData(buildSummary());
+                const text = buildSummary();
+                try {
+                    tg.sendData(text);
+                } catch (e) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        tg.showAlert('Copied to clipboard! Paste it in your chat.');
+                    }).catch(() => {
+                        tg.showAlert(text);
+                    });
+                }
             });
         }
 
