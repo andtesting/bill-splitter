@@ -413,26 +413,10 @@
             return text;
         }
 
-        function hasResults() {
-            return state.dishes.length > 0 && state.friends.length > 0 &&
-                state.dishes.some(d => d.shared || state.friends.some(f => state.checks[d.id + '-' + f.id]));
-        }
-
         function render() {
             renderTags();
             renderGrid();
             renderResults();
-            updateMainButton();
-        }
-
-        function updateMainButton() {
-            if (!isTelegram) return;
-            if (hasResults()) {
-                tg.MainButton.setText('Send Split to Chat');
-                tg.MainButton.show();
-            } else {
-                tg.MainButton.hide();
-            }
         }
 
         function renderTags() {
@@ -596,21 +580,6 @@
                     }
                 });
             }
-        }
-
-        if (isTelegram) {
-            tg.MainButton.onClick(() => {
-                const text = buildSummary();
-                try {
-                    tg.sendData(text);
-                } catch (e) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        tg.showAlert('Copied to clipboard! Paste it in your chat.');
-                    }).catch(() => {
-                        tg.showAlert(text);
-                    });
-                }
-            });
         }
 
         if (!loadFromHash()) loadFromQuery();
